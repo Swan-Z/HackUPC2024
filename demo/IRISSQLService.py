@@ -11,13 +11,14 @@ CONNECTION_STRING = f"iris://{username}:{password}@{hostname}:{port}/{namespace}
 
 engine = create_engine(CONNECTION_STRING)
 
-df = pd.read_csv('../data/medicine_dataset.csv')
+# Lee las primeras 10 líneas del archivo CSV
+df = pd.read_csv('../data/final_data.csv').head(10)
 #show the first row
 df.head()
 
 # Clean data
 # Remove the specified columns
-#df.drop(['currency'], axis=1, inplace=True)
+df.drop(['Total_applicants'], axis=1, inplace=True)
 # Remove rows without a price
 #df.dropna(subset=['price'], inplace=True)
 # Ensure values in 'price' are numbers
@@ -45,20 +46,33 @@ df.head()
 with engine.connect() as conn:
     with conn.begin():# Load 
         sql = f"""
-                CREATE TABLE scotch_reviews (
-        name VARCHAR(255),
-        substitutes VARCHAR(255),
-        sideEffects VARCHAR(255),
-        uses VARCHAR(255),
-        Chemical Class VARCHAR(255),
-        Habit Forming VARCHAR(255),
-        Theraputic Class VARCHAR(255),
-        Action Class VARCHAR(255)
+                CREATE TABLE job_description (
+        title VARCHAR(255),
+        role VARCHAR(255),
+        work VARCHAR(255),
+        need VARCHAR(255)
         )
                 """
         result = conn.execute(text(sql))
 
 model = SentenceTransformer('all-MiniLM-L6-v2') 
-embeddings = model.encode(df['uses'].tolist(), normalize_embeddings=True)
-df['uses_vector'] = embeddings.tolist()
+embeddings = model.encode(df['work'].tolist(), normalize_embeddings=True)
+df['work_vector'] = embeddings.tolist()
 df.head()
+
+with engine.connect() as conn:
+    with conn.begin():
+        for index, row in df.iterrows():
+            sql = text("""
+                INSERT INTO job_description(title, role, work, need, work_vector) 
+                VALUES (:name, :category, :review_point, :price, :description, TO_VECTOR(:description_vector))
+            """)
+            conn.execute(sql, {
+                'name': row['name'], 
+                'category': row['category'], 
+                'review_point': row['review.point'], 
+                'price': row['price'], 
+                'description': row['description'], 
+                'description_vector': str(row['description_vector'])
+            })
+
