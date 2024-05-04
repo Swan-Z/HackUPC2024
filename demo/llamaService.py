@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv(override=True)
 
 # if not os.environ.get("OPENAI_API_KEY"):
-#     os.environ["OPENAI_API_KEY"] = getpass.getpass("")
+#     os.environ["OPENAI_API_KEY"] = getpass.getpass("OpenAI API Key:")
 
 documents = SimpleDirectoryReader("../data/paul_graham").load_data()
 print("Document ID:", documents[0].doc_id)
