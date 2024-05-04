@@ -12,7 +12,8 @@ CONNECTION_STRING = f"iris://{username}:{password}@{hostname}:{port}/{namespace}
 engine = create_engine(CONNECTION_STRING)
 
 # Lee las primeras 10 líneas del archivo CSV
-df = pd.read_csv('../data/dataset.csv')
+df = pd.read_csv('../data/dataset.csv', encoding='ISO-8859-1')
+
 #show the first row
 df.head()
 
@@ -37,36 +38,38 @@ df.fillna('', inplace=True)
 # df.drop(columns=df.loc[:, 'substitute0':'substitute4'].columns, inplace=True)
 # df.drop(columns=df.loc[:, 'use0':'use4'].columns, inplace=True)
 
-with engine.connect() as conn:
-    with conn.begin():
-        sql = f"""
-                CREATE TABLE job_description (
-        title VARCHAR(255),
-        qualification VARCHAR(255),
-        work VARCHAR(255),
-        need VARCHAR(255)
-        )
-                """
-        result = conn.execute(text(sql))
+
+
+# with engine.connect() as conn:
+#     with conn.begin():
+#         sql = f"""
+#                 CREATE TABLE jobAnnouncement (
+#         title VARCHAR(255),
+#         qualification VARCHAR(255),
+#         job_description VARCHAR(255),
+#         need VARCHAR(255)
+#         )
+#                 """
+#         result = conn.execute(text(sql))
 
 model = SentenceTransformer('all-MiniLM-L6-v2') 
-embeddings = model.encode(df['work'].tolist(), normalize_embeddings=True)
-df['work_vector'] = embeddings.tolist()
+embeddings = model.encode(df['job_description'].tolist(), normalize_embeddings=True)
+df['job_vector'] = embeddings.tolist()
 df.head()
 
 with engine.connect() as conn:
     with conn.begin():
         for index, row in df.iterrows():
             sql = text("""
-                INSERT INTO job_description(title, role, work, need, work_vector) 
-                VALUES (:title, :role, :work, :need, TO_VECTOR(:work_vector))
+                INSERT INTO jobAnnouncement(title, role, job_description, need, job_vector) 
+                VALUES (:title, :role, :job_description, :need, TO_VECTOR(:job_vector))
             """)
             conn.execute(sql, {
                 'title': row['title'],
                 'qualification': row['qualification'],
-                'work': row['work'],
+                'job_description': row['job_description'],
                 'need': row['need'],
-                'work_vector': str(row['work_vector'])
+                'job_vector': str(row['job_vector'])
             })
 
 description_search = "I need a software engineer with experience in Python and Java"
@@ -76,7 +79,7 @@ with engine.connect() as conn:
     with conn.begin():
         sql = text("""
             SELECT TOP 3 * FROM job_description 
-            ORDER BY VECTOR_DOT_PRODUCT(work_vector, TO_VECTOR(:search_vector)) DESC
+            ORDER BY VECTOR_DOT_PRODUCT(job_vector, TO_VECTOR(:search_vector)) DESC
         """)
 
         results = conn.execute(sql, {'search_vector': str(search_vector)}).fetchall()
