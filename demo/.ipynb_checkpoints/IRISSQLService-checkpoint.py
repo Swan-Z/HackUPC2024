@@ -18,7 +18,7 @@ df.head()
 
 # Clean data
 # Remove the specified columns
-# df.drop(['company'], axis=1, inplace=True)
+df.drop(['company'], axis=1, inplace=True)
 # Remove rows without a price
 #df.dropna(subset=['price'], inplace=True)
 # Ensure values in 'price' are numbers
@@ -42,7 +42,7 @@ with engine.connect() as conn:
         sql = f"""
                 CREATE TABLE job_description (
         title VARCHAR(255),
-        qualification VARCHAR(255),
+        role VARCHAR(255),
         work VARCHAR(255),
         need VARCHAR(255)
         )
@@ -63,22 +63,9 @@ with engine.connect() as conn:
             """)
             conn.execute(sql, {
                 'title': row['title'],
-                'qualification': row['qualification'],
+                'role': row['role'],
                 'work': row['work'],
                 'need': row['need'],
                 'work_vector': str(row['work_vector'])
             })
 
-description_search = "I need a software engineer with experience in Python and Java"
-search_vector = model.encode(description_search, normalize_embeddings=True).tolist() 
-
-with engine.connect() as conn:
-    with conn.begin():
-        sql = text("""
-            SELECT TOP 3 * FROM job_description 
-            ORDER BY VECTOR_DOT_PRODUCT(work_vector, TO_VECTOR(:search_vector)) DESC
-        """)
-
-        results = conn.execute(sql, {'search_vector': str(search_vector)}).fetchall()
-
-print(results)
