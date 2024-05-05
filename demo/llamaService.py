@@ -46,3 +46,27 @@ print(textwrap.fill(str(response), 100))
 
 response = query_engine.query("What happened in the mid 1980s?")
 print(textwrap.fill(str(response), 100))
+
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app, origins='http://localhost:8100')
+
+# Define a route to handle queries
+@app.route('/query', methods=['POST'])
+def handle_query():
+    # Obtain the query text from the request
+    query_text = request.json.get('query')
+    
+    # Perform the query using the query_engine
+    response = query_engine.query(query_text)
+    
+    # Return the response as JSON
+    return jsonify({'response': str(response)})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
+
