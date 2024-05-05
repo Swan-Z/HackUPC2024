@@ -23,30 +23,24 @@ df.fillna('', inplace=True)
         
 #                 """
 #         result = conn.execute(text(sql))
-# print(df.columns)
 
-# with engine.connect() as conn:
-#     with conn.begin():
-#         sql = f"""
-#                 CREATE TABLE jobAnnouncement (
-#         title VARCHAR(2000),
-#         qualification VARCHAR(2000),
-#         job VARCHAR(2000),
-#         need VARCHAR(2000),
-#         job_vector VECTOR(DOUBLE, 384)
-#         )
-#                 """
-#         result = conn.execute(text(sql))
+with engine.connect() as conn:
+    with conn.begin():
+        sql = f"""
+                CREATE TABLE jobAnnouncement (
+        title VARCHAR(2000),
+        qualification VARCHAR(2000),
+        job VARCHAR(2000),
+        need VARCHAR(2000),
+        job_vector VECTOR(DOUBLE, 384)
+        )
+                """
+        result = conn.execute(text(sql))
 
 
 model = SentenceTransformer('all-MiniLM-L6-v2') 
 embeddings = model.encode(df['job'].tolist(), normalize_embeddings=True)
 df['job_vector'] = embeddings.tolist()
-
-
-
-
-
 
 with engine.connect() as conn:
     with conn.begin():
